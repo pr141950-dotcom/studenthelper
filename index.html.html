@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Helper - Pomodoro + Gallery</title>
+<style>
+:root {
+    --study-color: #4caf50;
+    --short-break-color: #2196f3;
+    --long-break-color: #ff9800;
+    --bg-color: #f4f4f9;
+    --text-color: #333;
+    --card-color: #fff;
+    --btn-color: #4caf50;
+    --btn-hover: #43a047;
+}
+
+body.dark {
+    --bg-color: #1e1e2f;
+    --text-color: #f0f0f0;
+    --card-color: #2c2c3c;
+    --btn-color: #81c784;
+    --btn-hover: #66bb6a;
+}
+
+* { box-sizing: border-box; }
+body { margin:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:var(--bg-color); color:var(--text-color); transition:0.3s; }
+
+header { padding:25px; text-align:center; background: linear-gradient(135deg,#4caf50,#81c784); color:#fff; font-size:2.2em; font-weight:bold; border-bottom-left-radius:15px; border-bottom-right-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.2); }
+
+.container { max-width:900px; margin:25px auto; padding:0 20px; }
+
+.card { background-color:var(--card-color); border-radius:15px; padding:25px; margin-bottom:25px; box-shadow:0 8px 20px rgba(0,0,0,0.15); transition: transform 0.3s, box-shadow 0.3s; }
+.card:hover { transform:translateY(-5px); box-shadow:0 12px 30px rgba(0,0,0,0.2); }
+
+h2 { margin-top:0; color:var(--btn-color); font-size:1.8em; margin-bottom:20px; }
+
+button { padding:10px 25px; border:none; border-radius:8px; background-color:var(--btn-color); color:#fff; cursor:pointer; transition:0.2s; font-size:1em; }
+button:hover { background-color:var(--btn-hover); }
+
+.dark-mode-toggle { position:fixed; top:20px; right:20px; background-color:var(--btn-color); border-radius:50%; width:50px; height:50px; font-size:1.4em; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.2); cursor:pointer; transition:0.3s; }
+.dark-mode-toggle:hover { transform:scale(1.1); }
+
+.timer-container { display:flex; flex-direction:column; align-items:center; }
+
+.circular-timer { width:200px; height:200px; position:relative; }
+.circular-timer svg { transform: rotate(-90deg); }
+.circular-timer circle { fill:none; stroke-width:12; stroke-linecap:round; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+.timer-text { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:2.5em; font-weight:bold; }
+
+#quote { text-align:center; font-style:italic; margin-top:15px; font-size:1.1em; color:#555; }
+
+#taskInput { width:70%; padding:12px; margin-right:5px; border-radius:8px; border:1px solid #ccc; font-size:1em; }
+#addTaskBtn { width:25%; }
+ul { list-style:none; padding:0; }
+li { padding:12px; background-color:#e0e0e0; margin-bottom:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; opacity:0; animation:fadeIn 0.5s forwards; transition:0.3s; }
+li.completed { text-decoration:line-through; opacity:0.6; transform:scale(0.98); }
+.task-buttons button { padding:6px 12px; margin-left:6px; font-size:0.9em; }
+
+@keyframes fadeIn { to { opacity:1; } }
+
+.photo-gallery { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:15px; }
+.photo-gallery img { width:150px; height:150px; object-fit:cover; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.2); cursor:pointer; transition:0.3s; }
+.photo-gallery img:hover { transform:scale(1.05); }
+
+/* Modal styles */
+.modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); justify-content:center; align-items:center; }
+.modal img { max-width:90%; max-height:80%; border-radius:8px; box-shadow:0 8px 25px rgba(0,0,0,0.5); }
+.modal button { position:absolute; top:20px; right:20px; padding:10px 20px; background:red; color:#fff; border:none; border-radius:5px; font-size:1em; cursor:pointer; }
+
+@media (max-width:600px){ #taskInput,#addTaskBtn{width:100%; margin:5px 0;} li{flex-direction:column; align-items:flex-start;} .task-buttons{margin-top:10px;} .photo-gallery img{width:45%; height:120px;} }
+</style>
+</head>
+<body>
+<header>Student Helper - Pomodoro + Gallery</header>
+<div class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</div>
+
+<div class="container">
+
+<!-- Pomodoro Timer Card -->
+<div class="card">
+<h2>Pomodoro Timer</h2>
+<div class="timer-container">
+    <div class="circular-timer">
+        <svg width="200" height="200">
+            <circle cx="100" cy="100" r="90" stroke="#e6e6e6"></circle>
+            <circle id="progressCircle" cx="100" cy="100" r="90" stroke="#4caf50" stroke-dasharray="565.48" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="timer-text" id="timerText">25:00</div>
+    </div>
+    <div style="margin-top:15px;">
+        <button onclick="startTimer()">Start</button>
+        <button onclick="pauseTimer()">Pause</button>
+        <button onclick="resetTimer()">Reset</button>
+    </div>
+</div>
+<div style="margin-top:15px; text-align:center;">
+    <label>Study: <input type="number" id="studyInput" value="25" min="1"> min</label>
+    <label>Short Break: <input type="number" id="shortBreakInput" value="5" min="1"> min</label>
+    <label>Long Break: <input type="number" id="longBreakInput" value="15" min="1"> min</label>
+</div>
+<p style="text-align:center; margin-top:10px;">Cycles Completed: <span id="cycleCount">0</span></p>
+<p id="quote">“Stay focused and keep moving forward.”</p>
+</div>
+
+<!-- To-Do List Card -->
+<div class="card">
+<h2>To-Do List</h2>
+<input type="text" id="taskInput" placeholder="Enter a task">
+<button id="addTaskBtn">Add</button>
+<ul id="taskList"></ul>
+</div>
+
+<!-- Photo Upload Card -->
+<div class="card">
+<h2>Photo Gallery</h2>
+<input type="file" id="photoInput" accept="image/*">
+<button id="uploadBtn">Upload Photo</button>
+<div class="photo-gallery" id="photoGallery"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="photoModal">
+    <img id="modalImage">
+    <button id="deletePhotoBtn">Delete</button>
+</div>
+
+</div>
+
+<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+
+<script>
+// Dark Mode
+function toggleDarkMode(){
+    document.body.classList.toggle('dark');
+    document.querySelector('.dark-mode-toggle').textContent = document.body.classList.contains('dark')?'☀️':'🌙';
+}
+
+// Pomodoro Timer
+let studyDuration=25*60, shortBreak=5*60, longBreak=15*60;
+let remainingTime=studyDuration, timerInterval, cycle=0, sessionType='study';
+const timerText=document.getElementById('timerText');
+const cycleDisplay=document.getElementById('cycleCount');
+const progressCircle=document.getElementById('progressCircle');
+const alarmSound=document.getElementById('alarmSound');
+const quotes=[
+    "Stay focused and keep moving forward.",
+    "Small steps every day lead to big results.",
+    "Take breaks, recharge, come back stronger.",
+    "Focus is your superpower.",
+    "Consistency beats intensity."
+];
+function updateTimerDisplay(){
+    const m=Math.floor(remainingTime/60).toString().padStart(2,'0');
+    const s=(remainingTime%60).toString().padStart(2,'0');
+    timerText.textContent=`${m}:${s}`;
+    const total = sessionType=='study'?studyDuration:sessionType=='short'?shortBreak:longBreak;
+    const offset = 2 * Math.PI * 90 * (1 - remainingTime/total);
+    progressCircle.style.strokeDashoffset = offset;
+}
+function startTimer(){ clearInterval(timerInterval); timerInterval=setInterval(()=>{ if(remainingTime>0){ remainingTime--; updateTimerDisplay(); } else { clearInterval(timerInterval); alarmSound.play(); switchSession(); } },1000); }
+function pauseTimer(){ clearInterval(timerInterval); }
+function resetTimer(){ clearInterval(timerInterval); remainingTime=sessionType=='study'?studyDuration:sessionType=='short'?shortBreak:longBreak; updateTimerDisplay(); }
+function switchSession(){
+    if(sessionType=='study'){ cycle++; cycleDisplay.textContent=cycle; sessionType=cycle%4==0?'long':'short'; remainingTime=sessionType=='short'?shortBreak:longBreak; progressCircle.style.stroke=sessionType=='short'?getComputedStyle(document.documentElement).getPropertyValue('--short-break-color'):getComputedStyle(document.documentElement).getPropertyValue('--long-break-color'); alert(sessionType=='short'?'Time for a short break!':'Time for a long break!'); } else { sessionType='study'; remainingTime=studyDuration; progressCircle.style.stroke=getComputedStyle(document.documentElement).getPropertyValue('--study-color'); alert('Back to study!'); }
+    document.getElementById('quote').textContent=quotes[Math.floor(Math.random()*quotes.length)];
+    updateTimerDisplay(); startTimer();
+}
+document.getElementById('studyInput').addEventListener('change', e=>{ studyDuration=parseInt(e.target.value)*60; if(sessionType=='study') resetTimer(); });
+document.getElementById('shortBreakInput').addEventListener('change', e=>{ shortBreak=parseInt(e.target.value)*60; if(sessionType=='short') resetTimer(); });
+document.getElementById('longBreakInput').addEventListener('change', e=>{ longBreak=parseInt(e.target.value)*60; if(sessionType=='long') resetTimer(); });
+updateTimerDisplay();
+
+// To-Do List
+const taskInput=document.getElementById('taskInput');
+const addTaskBtn=document.getElementById('addTaskBtn');
+const taskList=document.getElementById('taskList');
+let tasks=JSON.parse(localStorage.getItem('tasks'))||[];
+tasks.forEach(t=>addTaskToDOM(t.text,t.completed));
+addTaskBtn.addEventListener('click',()=>{ const text=taskInput.value.trim(); if(text){ addTaskToDOM(text); tasks.push({text,completed:false}); saveTasks(); taskInput.value=''; } });
+function addTaskToDOM(text,completed=false){
+    const li=document.createElement('li'); li.textContent=text; if(completed) li.classList.add('completed');
+    const btnDiv=document.createElement('div'); btnDiv.className='task-buttons';
+    const completeBtn=document.createElement('button'); completeBtn.textContent='✔'; completeBtn.onclick=()=>{ li.classList.toggle('completed'); saveTasks(); };
+    const deleteBtn=document.createElement('button'); deleteBtn.textContent='🗑'; deleteBtn.onclick=()=>{ if(confirm('Delete this task?')){ li.remove(); saveTasks(); } };
+    btnDiv.appendChild(completeBtn); btnDiv.appendChild(deleteBtn); li.appendChild(btnDiv); taskList.appendChild(li);
+}
+function saveTasks(){ const updated=[]; document.querySelectorAll('#taskList li').forEach(li=>{ updated.push({text:li.firstChild.textContent,completed:li.classList.contains('completed')}); }); localStorage.setItem('tasks',JSON.stringify(updated)); }
+
+// Photo Gallery Upload & Modal
+const photoInput=document.getElementById('photoInput');
+const uploadBtn=document.getElementById('uploadBtn');
+const photoGallery=document.getElementById('photoGallery');
+const modal=document.getElementById('photoModal');
+const modalImage=document.getElementById('modalImage');
+const deleteBtn=document.getElementById('deletePhotoBtn');
+let photos=JSON.parse(localStorage.getItem('photos'))||[];
+let selectedIndex=null;
+
+// Load photos
+photos.forEach((src,i)=>addPhotoToDOM(src,i));
+
+// Upload
+uploadBtn.addEventListener('click',()=>{
+    const file=photoInput.files[0];
+    if(file){
+        const reader=new FileReader();
+        reader.onload=function(e){
+            const src=e.target.result;
+            photos.push(src);
+            localStorage.setItem('photos',JSON.stringify(photos));
+            addPhotoToDOM(src,photos.length-1);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Add photo to gallery
+function addPhotoToDOM(src,index){
+    const img=document.createElement('img');
+    img.src=src;
+    img.dataset.index=index;
+    img.addEventListener('click',()=>{ selectedIndex=index; modal.style.display='flex'; modalImage.src=src; });
+    photoGallery.appendChild(img);
+}
+
+// Delete selected photo
+deleteBtn.addEventListener('click',()=>{
+    if(selectedIndex!==null){
+        photos.splice(selectedIndex,1);
+        localStorage.setItem('photos',JSON.stringify(photos));
+        renderGallery();
+        modal.style.display='none';
+        selectedIndex=null;
+    }
+});
+
+// Render gallery
+function renderGallery(){
+    photoGallery.innerHTML='';
+    photos.forEach((src,i)=>addPhotoToDOM(src,i));
+}
+
+// Close modal when clicking outside the image
+modal.addEventListener('click',(e)=>{ if(e.target===modal){ modal.style.display='none'; selectedIndex=null; } });
+</script>
+</body>
+</html>
